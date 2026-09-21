@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Production builds and TypeScript build metadata
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# Local environment configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Logs, diagnostics, and test reports
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+coverage/
+.nyc_output/
+
+# Local tooling caches
+.cache/
+.eslintcache
+vite.config.*.timestamp-*
+
+# Editor and operating-system files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
