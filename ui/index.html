@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClarityDesk Authentication</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary": "#0058be",
+              "surface-container": "#eceef0",
+              "on-background": "#191c1e",
+              "inverse-surface": "#2d3133",
+              "on-surface": "#191c1e",
+              "surface": "#f7f9fb",
+              "inverse-on-surface": "#eff1f3",
+              "outline": "#777587",
+              "on-primary-fixed-variant": "#3323cc",
+              "secondary-fixed": "#d8e2ff",
+              "primary-fixed": "#e2dfff",
+              "on-tertiary-fixed-variant": "#3f4759",
+              "on-primary-container": "#dad7ff",
+              "tertiary": "#41485b",
+              "outline-variant": "#c7c4d8",
+              "inverse-primary": "#c3c0ff",
+              "error-container": "#ffdad6",
+              "surface-container-highest": "#e0e3e5",
+              "tertiary-fixed": "#dbe2fa",
+              "error": "#ba1a1a",
+              "on-tertiary": "#ffffff",
+              "surface-tint": "#4d44e3",
+              "surface-container-low": "#f2f4f6",
+              "surface-variant": "#e0e3e5",
+              "primary-container": "#4f46e5",
+              "on-secondary": "#ffffff",
+              "on-primary-fixed": "#0f0069",
+              "secondary-container": "#2170e4",
+              "on-primary": "#ffffff",
+              "on-error-container": "#93000a",
+              "surface-bright": "#f7f9fb",
+              "on-secondary-fixed": "#001a42",
+              "secondary-fixed-dim": "#adc6ff",
+              "on-tertiary-fixed": "#141b2c",
+              "tertiary-container": "#586074",
+              "surface-dim": "#d8dadc",
+              "primary-fixed-dim": "#c3c0ff",
+              "on-secondary-container": "#fefcff",
+              "surface-container-lowest": "#ffffff",
+              "on-surface-variant": "#464555",
+              "background": "#f7f9fb",
+              "tertiary-fixed-dim": "#bfc6dd",
+              "surface-container-high": "#e6e8ea",
+              "on-error": "#ffffff",
+              "primary": "#3525cd",
+              "on-secondary-fixed-variant": "#004395",
+              "on-tertiary-container": "#d4dbf3"
+            },
+            borderRadius: {
+              "DEFAULT": "0.25rem",
+              "lg": "0.5rem",
+              "xl": "0.75rem",
+              "full": "9999px"
+            },
+            spacing: {
+              "gutter-desktop": "1.5rem",
+              "gutter": "1rem",
+              "space-xs": "0.25rem",
+              "space-md": "0.75rem",
+              "margin-desktop": "1.5rem",
+              "margin": "1rem",
+              "space-xl": "1.5rem",
+              "space-sm": "0.5rem",
+              "space-lg": "1rem"
+            },
+            fontFamily: {
+              "headline-md": ["Inter", "sans-serif"],
+              "label-sm": ["Inter", "sans-serif"],
+              "body-sm": ["Inter", "sans-serif"],
+              "body-md": ["Inter", "sans-serif"],
+              "label-md": ["Inter", "sans-serif"],
+              "label-lg": ["Inter", "sans-serif"],
+              "headline-sm": ["Inter", "sans-serif"],
+              "headline-xl": ["Inter", "sans-serif"],
+              "headline-lg": ["Inter", "sans-serif"],
+              "headline-xl-mobile": ["Inter", "sans-serif"],
+              "body-lg": ["Inter", "sans-serif"]
+            },
+            fontSize: {
+              "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.015em", fontWeight: "600" }],
+              "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }],
+              "body-sm": ["13px", { lineHeight: "18px", letterSpacing: "0em", fontWeight: "400" }],
+              "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+              "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "500" }],
+              "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "-0.005em", fontWeight: "500" }],
+              "headline-sm": ["16px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }],
+              "headline-xl": ["36px", { lineHeight: "44px", letterSpacing: "-0.025em", fontWeight: "600" }],
+              "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "600" }],
+              "headline-xl-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "600" }],
+              "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "400" }]
+            }
+          }
+        }
+      };
+    </script>
+  </head>
+  <body class="bg-background font-body-md text-on-surface min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
