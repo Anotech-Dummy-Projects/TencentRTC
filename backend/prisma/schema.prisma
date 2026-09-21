@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── USER MODEL (UNCHANGED) ───────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())
+  firstName String   @default("")
+  lastName  String   @default("")
+  email     String   @unique
+  password  String   @map("password_hash")
+  userId    String   @unique @default("") 
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sentRequests     SessionRequest[] @relation("Sender")
+  receivedRequests SessionRequest[] @relation("Receiver")
+  
+  sessionsAsInitiator ActiveSession[] @relation("Initiator")
+  sessionsAsReceiver  ActiveSession[] @relation("Receiver")
+  
+  // New Relations for Admin/Audit
+  auditLogsAsInitiator SessionAuditLog[] @relation("AuditInitiator")
+  auditLogsAsReceiver  SessionAuditLog[] @relation("AuditReceiver")
+
+  @@map("users")
+}
+
+// ─── SESSION REQUEST (UNCHANGED) ──────────────────────────────────
+model SessionRequest {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  
+  status     String   @default("PENDING")
+  
+  sender     User     @relation("Sender", fields: [senderId], references: [id])
+  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@map("session_requests")
+}
+
+// ─── ACTIVE SESSION (UPDATED WITH ARCHIVE RELATION) ───────────────
+model ActiveSession {
+  id          String   @id @default(uuid())
+  initiatorId String
+  receiverId  String
+  
+  startedAt   DateTime @default(now())
+  endedAt     DateTime? // Added: Tracks exact end time for archiving
+  lastActive  DateTime @default(now())
+  
+  status      String   @default("ACTIVE") // ACTIVE, ENDED
+
+  initiator   User     @relation("Initiator", fields: [initiatorId], references: [id])
+  receiver    User     @relation("Receiver", fields: [receiverId], references: [id])
+  
+  // Link to archive queue
+  pendingArchive PendingArchive?
+
+  @@unique([initiatorId, receiverId])
+  @@map("active_sessions")
+}
+
+// ─── NEW: PENDING ARCHIVE QUEUE ───────────────────────────────────
+model PendingArchive {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique
+  
+  status      String   @default("PENDING") // PENDING, PROCESSING, ARCHIVED, FAILED
+  retryCount  Int      @default(0)
+  lastError   String?  @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  session     ActiveSession @relation(fields: [sessionId], references: [id])
+
+  @@map("pending_archives")
+}
+
+// ─── NEW: SESSION AUDIT METADATA ──────────────────────────────────
+model SessionAuditLog {
+  id            String   @id @default(uuid())
+  sessionId     String   @unique
+  
+  s3Key         String   @db.Text
+  messageCount  Int      @default(0)
+  
+  startedAt     DateTime
+  endedAt       DateTime
+  durationSecs  Int
+  
+  initiatorId   String
+  receiverId    String
+  
+  archivedAt    DateTime @default(now())
+
+  initiator     User     @relation("AuditInitiator", fields: [initiatorId], references: [id])
+  receiver      User     @relation("AuditReceiver", fields: [receiverId], references: [id])
+
+  @@index([archivedAt])
+  @@index([initiatorId])
+  @@index([receiverId])
+  @@map("session_audit_logs")
+}
+
+// ─── NEW: ADMIN ACTIVITY LOG ──────────────────────────────────────
+model AdminActivityLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  
+  action    String   // VIEW_SESSION, SEARCH, EXPORT
+  targetId  String?
+  
+  ipAddr    String?
+  userAgent String?  @db.Text
+  
+  createdAt DateTime @default(now())
+
+  @@map("admin_activity_logs")
+}
