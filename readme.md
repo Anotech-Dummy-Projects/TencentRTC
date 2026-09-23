@@ -239,3 +239,41 @@ DB Sirf Metadata Rakhta Hai: startedAt, endedAt, participants. Chat content kabh
 Tencent Sirf Raw Data Deta Hai: Filtering aur formatting hamara kaam hai.
 S3 Permanent Archive Hai: Ek baar upload ho gaya, toh wohi source of truth hai admin ke liye.
 Queue Crash-Safe Hai: Server restart hone par bhi pending_archives table safe rehti hai. Cron resume karega wahan se.
+
+
+The 5 Core Methods (Backend Service)
+1. enqueueSession(sessionId: string)
+Trigger: Jab session end hoti hai (POST /end).
+Kaam: PendingArchive table mein row insert karna { sessionId, status: 'PENDING' }.
+Check: Insert ke baad turant count check karna. Agar count >= 35, toh processArchiveBatch() call karna.
+Output: Void (Background trigger).
+2. getUniqueConversationGroups(limit: number)
+Trigger: processArchiveBatch() ke andar.
+Kaam: DB se top 35 pending sessions uthana aur unhe initiatorId + receiverId key se group karna.
+Logic: Map banega: { "C2C_Om_Ayush": [sess1, sess2], "C2C_Alex_Sam": [sess3] }.
+Output: Array of unique conversation objects with their associated sessions.
+3. fetchFullConversationHistory(conversationId, minTime, maxTime)
+Trigger: Har unique conversation ke liye loop mein.
+Kaam: Tencent REST API (admin_getroammsg) call karna.
+Pagination Loop: Jab tak response Complete === 0 ho, tab tak LastMsgKey pass karke next page fetch karna.
+Output: Full message array for that time range (RAM mein).
+4. sliceAndUploadSessions(messages, sessions)
+Trigger: Jab history fetch ho jaye.
+Kaam:
+Messages ko har session ke startedAt/endedAt se filter karna.
+Filtered JSON ko AWS S3 par upload karna (PutObjectCommand).
+Success hone par PendingArchive rows delete/update karna.
+Parallelism: Is method ko batch of 3 conversations ke liye parallel chalana.
+Output: Promise<void> (All uploads done).
+5. cronForceProcess()
+Trigger: Daily at 8:00 PM.
+Kaam: Jo bhi sessions abhi tak pending hain (chahe count < 35 ho), unhe utha kar same processArchiveBatch() flow se process karna.
+Safety Net: Ensure no data is left behind for the day.
+Output: Void.
+
+
+Env Vars: TRTC_SDK_APP_ID aur TRTC_SECRET_KEY use karega.
+Dynamic UserSig: tls-sig-api-v2-node se admin user ka sig generate karega (180 days expiry).
+Region URL: Singapore (adminapisgp.im.qcloud.com) hardcode karega.
+Grouping Logic: Sorted user IDs se key banayega (no session ID).
+Parallel Batching: 3 conversations at a time process karega.
