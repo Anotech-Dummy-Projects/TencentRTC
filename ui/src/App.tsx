@@ -13,6 +13,7 @@ import { trtcChat } from "./lib/trtcChat";
 import { socketClient } from "./lib/socket";
 import {
   getMe,
+  adminLogout,
   logout,
   getChatToken,
   sendHeartbeat,
@@ -715,7 +716,7 @@ function MainApp() {
       {currentView === "admin" && (
         <Admin
           onLogout={() => {
-            logout().catch(() => undefined);
+            adminLogout().catch(() => undefined);
             window.location.hash = "#admin-login";
             setCurrentView("admin-login");
           }}

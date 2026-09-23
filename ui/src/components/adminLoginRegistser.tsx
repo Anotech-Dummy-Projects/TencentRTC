@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { login, register } from "../lib/api";
+import { adminLogin, adminRegister } from "../lib/api";
 
 export interface AdminLoginRegisterProps {
   onLoginSuccess?: (data?: { identifier: string; token: string }) => void;
@@ -47,7 +47,7 @@ export const AdminLoginRegister: React.FC<AdminLoginRegisterProps> = ({
     setAuthStage("verifying");
 
     try {
-      const response = await login({ email: loginIdentifier.trim(), password: loginPassword });
+      const response = await adminLogin({ username: loginIdentifier.trim(), password: loginPassword });
       if (!response.token) throw new Error("The server did not return an access token.");
       // The backend also sets an HttpOnly CookieToken. Local storage is kept as
       // the development bearer-token fallback used by the shared API client.
@@ -80,14 +80,12 @@ export const AdminLoginRegister: React.FC<AdminLoginRegisterProps> = ({
     setAuthStage("verifying");
 
     try {
-      const [firstName = "User", ...lastNameParts] = regFullName.trim().split(/\s+/);
-      const response = await register({
-        email: regEmail.trim(),
+      // Keep the account separate: this calls /api/admin/register, never the regular User endpoint.
+      const response = await adminRegister({
+        username: regEmail.trim(),
         password: regPassword,
-        firstName,
-        lastName: lastNameParts.join(" ") || "Member",
+        name: regFullName.trim(),
       });
-      if (!response.token) throw new Error("The server did not return an access token.");
       localStorage.setItem("token", response.token);
       setAuthStage("granted");
       onRegisterSuccess?.({

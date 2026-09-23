@@ -3,6 +3,9 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  AdminAuthResponse,
+  AdminMeResponse,
+  AdminArchiveMessagesResponse,
   ChatTokenResponse,
   UsersResponse,
   MeResponse,
@@ -62,6 +65,41 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
 export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
   const response = await api.post<AuthResponse>("/register", data);
   return response.data;
+};
+
+/** Dedicated administrator credentials are intentionally separate from regular user login. */
+export const adminLogin = async (data: { username: string; password: string }): Promise<AdminAuthResponse> => {
+  const response = await api.post<AdminAuthResponse>("/api/admin/login", data);
+  return response.data;
+};
+
+/** Simple standalone admin registration; this never calls the regular User registration endpoint. */
+export const adminRegister = async (data: {
+  username: string;
+  password: string;
+  name: string;
+}): Promise<AdminAuthResponse> => {
+  const response = await api.post<AdminAuthResponse>("/api/admin/register", data);
+  return response.data;
+};
+
+export const getAdminMe = async (): Promise<AdminMeResponse> => {
+  const response = await api.get<AdminMeResponse>("/api/admin/me");
+  return response.data;
+};
+
+export const getAdminSessionMessages = async (
+  sessionId: string
+): Promise<AdminArchiveMessagesResponse> => {
+  const response = await api.get<AdminArchiveMessagesResponse>(
+    `/api/admin/sessions/${encodeURIComponent(sessionId)}/messages`
+  );
+  return response.data;
+};
+
+export const adminLogout = async (): Promise<void> => {
+  localStorage.removeItem("token");
+  await api.post<ApiMessageResponse>("/api/admin/logout");
 };
 
 export const getChatToken = async (): Promise<ChatTokenResponse> => {

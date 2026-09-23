@@ -25,6 +25,38 @@ export interface AuthResponse {
   token?: string;
 }
 
+export interface AdminAuthResponse {
+  token: string;
+  admin: {
+    id: string;
+    username: string;
+    name: string | null;
+  };
+}
+
+export interface AdminMeResponse {
+  admin: {
+    id: string;
+    username: string;
+    name: string | null;
+    lastLoginAt: string | null;
+  };
+}
+
+export interface AdminArchivedMessage {
+  id: string;
+  sender: string;
+  time: string;
+  text: string;
+}
+
+export interface AdminArchiveMessagesResponse {
+  archived: boolean;
+  archivedAt: string | null;
+  messageCount: number;
+  messages: AdminArchivedMessage[];
+}
+
 export interface ChatTokenResponse {
   sdkAppId: number;
   userId: string;
