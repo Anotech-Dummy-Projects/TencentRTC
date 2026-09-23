@@ -8,7 +8,13 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── USER MODEL (UNCHANGED) ───────────────────────────────────────
+// ─── ENUM FOR ROLES ──────────────────────────────────────────────
+enum Role {
+  USER
+  ADMIN
+}
+
+// ─── USER MODEL WITH ROLE ─────────────────────────────────────────
 model User {
   id        String   @id @default(uuid())
   firstName String   @default("")
@@ -16,6 +22,7 @@ model User {
   email     String   @unique
   password  String   @map("password_hash")
   userId    String   @unique @default("") 
+  role      Role     @default(USER)
   
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -31,6 +38,24 @@ model User {
   auditLogsAsReceiver  SessionAuditLog[] @relation("AuditReceiver")
 
   @@map("users")
+}
+
+// ─── DEDICATED ADMIN TABLE ────────────────────────────────────────
+model Admin {
+  id          String   @id @default(uuid())
+  username    String   @unique
+  password    String   @map("password_hash")
+  name        String?
+
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  activityLogs AdminActivityLog[] @relation("AdminActivity")
+
+  @@map("admins")
 }
 
 // ─── SESSION REQUEST (UNCHANGED) ──────────────────────────────────
@@ -128,6 +153,8 @@ model AdminActivityLog {
   userAgent String?  @db.Text
   
   createdAt DateTime @default(now())
+
+  admin     Admin    @relation("AdminActivity", fields: [adminId], references: [id])
 
   @@map("admin_activity_logs")
 }

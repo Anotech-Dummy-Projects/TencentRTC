@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { prisma } from "./db.js";
-import { authenticateJWT } from "./chat.js";
+import { requireAdmin } from "./adminAuth.js";
+import { archiveRouter } from "./p2/cron.js";
+import { readSessionArchive } from "./p2/s3Uploader.js";
 
 export const adminRouter = Router();
 
@@ -30,9 +32,105 @@ function isTimeout(lastActive: Date, endedAt: Date | null): boolean {
   return Boolean(endedAt && endedAt.getTime() - lastActive.getTime() >= INACTIVITY_TIMEOUT_MS);
 }
 
-// The current User schema has no role column. Authentication is enforced here;
-// add a role claim/check in this middleware once roles exist in the auth model.
-adminRouter.use(authenticateJWT);
+type ArchiveBodyElement = {
+  MsgType?: unknown;
+  MsgContent?: Record<string, unknown>;
+};
+
+type ArchiveMessage = {
+  MsgKey?: unknown;
+  MsgTimeStamp?: unknown;
+  From_Account?: unknown;
+  MsgBody?: unknown;
+};
+
+function readString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+/** Converts raw Tencent archive elements into display-safe audit records for the admin panel. */
+function formatArchivedMessage(raw: unknown, index: number) {
+  const message = (typeof raw === "object" && raw !== null ? raw : {}) as ArchiveMessage;
+  const body = Array.isArray(message.MsgBody) ? message.MsgBody as ArchiveBodyElement[] : [];
+  const parts = body.map((element) => {
+    const type = readString(element.MsgType);
+    const content = element.MsgContent ?? {};
+    if (type === "TIMTextElem") return readString(content.Text);
+    if (type === "TIMImageElem") return "[Image]";
+    if (type === "TIMFileElem") return `[File${readString(content.Name) ? `: ${readString(content.Name)}` : ""}]`;
+    if (type === "TIMSoundElem") return "[Voice message]";
+    return `[Unsupported message: ${type || "unknown"}]`;
+  }).filter(Boolean);
+  const timestamp = typeof message.MsgTimeStamp === "number" ? message.MsgTimeStamp * 1000 : Date.now();
+
+  return {
+    id: readString(message.MsgKey, `archive-message-${index}`),
+    sender: readString(message.From_Account, "Unknown sender"),
+    time: new Date(timestamp).toISOString(),
+    text: parts.join("\n") || "[Empty message]",
+  };
+}
+
+// Dedicated Admin accounts only; regular User JWTs cannot pass this middleware.
+adminRouter.use(requireAdmin);
+
+// Phase 2B archive test/debug routes live under /api/admin/archive.
+adminRouter.use("/archive", archiveRouter);
+
+/**
+ * Returns a session's archived message JSON to an authenticated admin only.
+ * S3 credentials and raw object key remain server-side.
+ */
+adminRouter.get("/sessions/:id/messages", async (req, res) => {
+  try {
+    const auditLog = await prisma.sessionAuditLog.findUnique({
+      where: { sessionId: req.params.id },
+      select: { s3Key: true, messageCount: true, archivedAt: true },
+    });
+
+    if (!auditLog) {
+      return res.json({ archived: false, archivedAt: null, messageCount: 0, messages: [] });
+    }
+
+    const rawMessages = await readSessionArchive(auditLog.s3Key);
+    const archivedMessages = rawMessages.map(formatArchivedMessage);
+    const senderUserIds = [...new Set(archivedMessages.map((message) => message.sender))];
+    const users = await prisma.user.findMany({
+      where: { userId: { in: senderUserIds } },
+      select: { userId: true, firstName: true, lastName: true },
+    });
+    const displayNameByUserId = new Map(
+      users.map((user) => [
+        user.userId,
+        `${user.firstName} ${user.lastName}`.trim() || user.userId,
+      ])
+    );
+    // Tencent stores sender userIds; resolve them to the app's original display names for the panel.
+    const messages = archivedMessages.map((message) => ({
+      ...message,
+      sender: displayNameByUserId.get(message.sender) || message.sender,
+    }));
+    await prisma.adminActivityLog.create({
+      data: {
+        adminId: req.admin!.adminId,
+        action: "VIEW_ARCHIVE",
+        targetId: req.params.id,
+        ipAddr: req.ip,
+        userAgent: req.get("user-agent") || null,
+      },
+    });
+
+    return res.json({
+      archived: true,
+      archivedAt: auditLog.archivedAt,
+      messageCount: auditLog.messageCount,
+      messages,
+    });
+  } catch (error) {
+    console.error(`[Admin] Failed to load archived messages for ${req.params.id}:`, error);
+    return res.status(502).json({ error: "Unable to load archived chat messages" });
+  }
+});
 
 /**
  * Lists session metadata only. ActiveSession is used as the primary source so

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "./db.js";
 import { authenticateJWT } from "./chat.js";
 import { emitToUser } from "./socketServer.js";
+import { enqueueSession } from "./p2/archiveService.js";
 
 export const sessionRouter = Router();
 
@@ -97,6 +98,9 @@ export async function cleanupInactiveSessions(
     console.log(
       `[Session] Ended (Inactivity) | Users: ${session.initiator?.userId || "Unknown"} ↔ ${session.receiver?.userId || "Unknown"} | Active For: ${duration} | Timeout: ${formatTime(now)}`
     );
+
+    // Part 1 placeholder: finished session ko future archive queue flow mein signal karo.
+    await enqueueSession(session.id);
   }
 }
 
@@ -525,6 +529,9 @@ sessionRouter.post("/end", authenticateJWT, async (req, res) => {
     console.log(
       `[Session] Ended (Manual) | Users: ${session.initiator?.userId || "Unknown"} ↔ ${session.receiver?.userId || "Unknown"} | Active For: ${duration} | Ended: ${formatTime(now)}`
     );
+
+    // Part 1 placeholder: abhi sirf enqueue log hoga; Part 2 mein DB queue record banega.
+    await enqueueSession(session.id);
 
     return res.json({ message: "Session ended successfully" });
   } catch (error: any) {

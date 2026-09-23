@@ -9,9 +9,11 @@ import { chatRouter } from "./chat.js";
 import { usersRouter } from "./users.js";
 import { sessionRouter } from "./session.js";
 import { adminRouter } from "./admin.js";
+import adminAuthRouter from "./adminAuth.js";
 import { cleanupInactiveSessions } from "./session.js";
 import { connectDB } from "./db.js";
 import { initSocketServer } from "./socketServer.js";
+import { startArchiveCron } from "./p2/cron.js";
 
 import path from "path";
 import { uploadRouter } from "./upload.js";
@@ -63,6 +65,8 @@ app.use(registerRouter);
 app.use(loginRouter);
 app.use(usersRouter);
 app.use("/api/session", sessionRouter);
+// Mount administrator authentication before routes protected by requireAdmin.
+app.use("/api/admin", adminAuthRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/chat", chatRouter);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
@@ -103,6 +107,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
       console.log(`\x1b[2m         Set DB_QUERY_LOG=true to enable per-query logs\x1b[0m`);
     }
     console.log("");
+
+    // Register the Phase 2B daily archive safety net once the server is listening.
+    startArchiveCron();
   });
 
   // 5. Start global inactivity cleanup (runs every 60s)
