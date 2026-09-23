@@ -67,7 +67,9 @@ loginRouter.post(["/login", "/api/login"], async (req, res) => {
     res.cookie("CookieToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      // The frontend and API currently use separate Vercel subdomains.
+      // Cross-origin XHR requests need an explicit cross-site cookie in production.
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -93,7 +95,7 @@ loginRouter.post(["/logout", "/api/logout"], (req, res) => {
   res.clearCookie("CookieToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     path: "/",
   });
   return res.json({ message: "Logged out successfully" });
@@ -135,4 +137,3 @@ loginRouter.get(["/me", "/api/me"], authenticateJWT, async (req, res) => {
     return res.status(500).json({ error: error.message || "Internal server error" });
   }
 });
-

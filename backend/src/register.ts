@@ -77,7 +77,9 @@ registerRouter.post(["/register", "/api/register"], async (req, res) => {
     res.cookie("CookieToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      // The frontend and API currently use separate Vercel subdomains.
+      // Cross-origin XHR requests need an explicit cross-site cookie in production.
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -98,4 +100,3 @@ registerRouter.post(["/register", "/api/register"], async (req, res) => {
     return res.status(500).json({ error: error.message || "Internal server error" });
   }
 });
-
