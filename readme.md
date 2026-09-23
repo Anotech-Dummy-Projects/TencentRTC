@@ -277,3 +277,39 @@ Dynamic UserSig: tls-sig-api-v2-node se admin user ka sig generate karega (180 d
 Region URL: Singapore (adminapisgp.im.qcloud.com) hardcode karega.
 Grouping Logic: Sorted user IDs se key banayega (no session ID).
 Parallel Batching: 3 conversations at a time process karega.
+
+
+I’ll frame this as an architecture decision, including the minimum safe setup so you can take a concrete recommendation to your tech lead.
+
+• Browsing the web
+
+• Searched the web for site:docs.aws.amazon.com Amazon S3 presigned URL upload user generated content lifecycle rule encryption public access block
+
+• For production, use S3 for attachments—but don’t create a second bucket without your tech lead’s approval.
+
+  My recommendation:
+
+  - Temporarily disable the upload route so Vercel works now.
+  - Tell your tech lead: “The Vercel filesystem is ephemeral; attachments need object storage. Can we use the existing S3 bucket with a separate
+    uploads/ prefix, or do we need a dedicated attachments bucket?”
+
+  - Default to the existing bucket with separate paths, e.g.:
+
+  chat-archives/<session-id>.json
+  uploads/<user-id>/<uuid>-file-name.png
+
+  A separate bucket is only worth it if attachments need different retention/deletion rules, access controls, region, billing ownership, or
+  compliance handling from chat archives.
+
+  For the eventual feature, avoid writing user files to the Vercel function disk. The clean design is:
+
+  Browser → request short-lived upload URL from your API
+  Browser → uploads directly to S3
+  API/database → saves file metadata and S3 object key
+  Chat message → contains an attachment reference
+
+  Use presigned S3 URLs, keep the bucket private, and generate short-lived download URLs when a permitted chat participant opens an attachment. This
+  avoids exposing files publicly and avoids serverless upload-size/runtime limitations.
+
+  So: disable it now, preserve the code for later, and wait for your tech lead before creating or reusing cloud storage—because bucket permissions,
+  retention, and costs are team-level decisions.

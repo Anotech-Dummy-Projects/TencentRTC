@@ -25,7 +25,10 @@
  */
 
 import TencentCloudChat from "@tencentcloud/chat";
-import { uploadFile } from "./api";
+// TODO remove it wwhen we connect the s3
+import TIMUploadPlugin from "tim-upload-plugin";
+//TODO: this is for futuure s3 upload !
+// import { uploadFile } from "./api";
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -158,6 +161,8 @@ class TrtcChatManager {
     try {
       // Create the Tencent Cloud Chat SDK instance with our app's SDK App ID
       this.chatInstance = TencentCloudChat.create({ SDKAppID: sdkAppId });
+      //TODO delete this after s3
+      this.chatInstance.registerPlugin({ "tim-upload-plugin": TIMUploadPlugin, });
 
       // ── SDK Lifecycle Events ──────────────────────────────────
 
@@ -462,8 +467,9 @@ class TrtcChatManager {
     // Attachments also end any active typing state before delivery.
     await this.stopTypingSignal(toUserId);
 
+    //TODO s3 upload 
     // Step 1: Upload via unified upload endpoint
-    const uploadRes = await uploadFile(file);
+    //const uploadRes = await uploadFile(file);
 
     // Step 2: Create type-specific message
     let message: any;
@@ -472,28 +478,34 @@ class TrtcChatManager {
         message = this.chatInstance.createImageMessage({
           to: toUserId,
           conversationType: TencentCloudChat.TYPES.CONV_C2C,
-          payload: { file, url: uploadRes.url },
+          payload: { file },
+          //TODO : s3 upload 
+          //payload: { file, url: uploadRes.url },
         });
       } else if (type === "video") {
         message = this.chatInstance.createVideoMessage({
           to: toUserId,
           conversationType: TencentCloudChat.TYPES.CONV_C2C,
-          payload: {
-            file,
-            videoUrl: uploadRes.url,
-            snapshotUrl: uploadRes.thumbnailUrl || uploadRes.url,
-          },
+          payload:{ file },
+          //TODO : s3 upload 
+          //payload: {
+            //file,
+            //videoUrl: uploadRes.url,
+            //snapshotUrl: uploadRes.thumbnailUrl || uploadRes.url,
+          //},
         });
       } else {
         message = this.chatInstance.createFileMessage({
           to: toUserId,
           conversationType: TencentCloudChat.TYPES.CONV_C2C,
-          payload: {
-            file,
-            url: uploadRes.url,
-            fileName: file.name,
-            fileSize: file.size,
-          },
+          payload:{file },
+          // TODO s3 upload 
+          //payload: {
+            //file,
+            //url: uploadRes.url,
+            //filName: file.name,
+            //fileSize: file.size,
+          //},
         });
       }
 
@@ -505,6 +517,11 @@ class TrtcChatManager {
         `trtc_${type}_${Date.now()}`;
       return sdkId;
     } catch (sdkErr) {
+      console.log("[TRTC] media send failed sdk err", sdkErr);
+      throw new Error("Unable to send this attachment through Tencent Chat.");
+    }
+    // TODO s3 
+    /* catch (sdkErr) {
       console.warn("[TRTC] Direct SDK media send failed, dispatching via media payload fallback:", sdkErr);
 
       // Fallback: Send custom media message carrying uploaded URL
@@ -534,6 +551,7 @@ class TrtcChatManager {
       const fallbackRes = await this.chatInstance.sendMessage(fallbackMsg);
       return fallbackRes?.data?.message?.ID || `trtc_custom_${Date.now()}`;
     }
+    */
   }
 
 

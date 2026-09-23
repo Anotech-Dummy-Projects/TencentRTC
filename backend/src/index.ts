@@ -16,7 +16,7 @@ import { initSocketServer } from "./socketServer.js";
 import { startArchiveCron } from "./p2/cron.js";
 
 import path from "path";
-import { uploadRouter } from "./upload.js";
+//import { uploadRouter } from "./upload.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -69,8 +69,8 @@ app.use("/api/session", sessionRouter);
 app.use("/api/admin", adminAuthRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/chat", chatRouter);
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-app.use(uploadRouter);
+// app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// app.use(uploadRouter);
 
 // Global JSON error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
